@@ -1,36 +1,59 @@
 
+MSConvert_get_dir <- function(){
 
-#' @title get_MSconvert_Dir
-#' @description
-#' get msconvert dir
-#'
+  pkg.dir <- system.file(package = "MSconvertR")
+  msconvert.path <- dir(pkg.dir,pattern = "msconvert.exe$",recursive = T,full.names = T)
+  msconvert.path <- ifelse(length(msconvert.path)==0,NA,msconvert.path)
+  return(msconvert.path)
+}
+
+#' Title
 #'
 #' @return
 #' @export
 #'
 #' @examples
-get_MSconvert_Dir <- function(silence = F){
+MSConvert_check <- function(){
 
-  pkg.dir <- system.file(package = "MSconvertR")
-  message("MSconvert in: \n\t"
-    ,pkg.dir)
-  if (file.exists(paste0(pkg.dir,"/data/msconvert/msconvert.exe"))) {
+  msconvert <- MSConvert_get_dir()
+
+  ###check msconvert
+  {
+    msconvert_return <- try(system(msconvert,
+                                   intern = T),silent = T)
+    if(!any(grepl(pattern = "Usage: msconvert", x = msconvert_return))){
+      message("MSConvert not found, re-build?\n 1:yes, 2:no")
+      x <- readline()
+      if (x==1) {
+        msconvert.zip <- dir(system.file(package = "MSconvertR"),pattern = "msconvert.zip",recursive = T,full.names = T)
+        unzip(msconvert.zip,exdir = dirname(msconvert.zip))
+        return(T)
 
 
-  }else{
 
-    msconvert.zip <- paste0(pkg.dir,"/data/msconvert.zip")
-    unzip(msconvert.zip,exdir = dirname(msconvert.zip))
+      }
+    }
 
   }
-  msconvert.path <- paste0(pkg.dir,"/data/msconvert/msconvert.exe")
-  return(msconvert.path)
+  message("MSConvert in: ",msconvert)
+  return(T)
+
+
+
+
 }
 
 
 
-
-
+#' Title
+#'
+#' @param raw.path
+#' @param format.to
+#'
+#' @return
+#' @export
+#'
+#' @examples
 msConvertDir<- function(raw.path,format.to = "mzML"){
 
   dir.create(paste0(raw.path,"/mzML"),recursive = T)
@@ -55,25 +78,27 @@ msConvertDir<- function(raw.path,format.to = "mzML"){
 }
 
 
+#' Title
+#'
+#' @param raw.files
+#' @param mzML.files
+#' @param BPPARAM
+#'
+#' @return
+#' @export
+#'
+#' @examples
 msConvert2mzML <- function(raw.files ,
                            mzML.files,
                            BPPARAM = BiocParallel::SnowParam(workers = parallel::detectCores()-1)){
 
-  msconvert <- get_MSconvert_Dir(silence = T)
+  msconvert <- MSConvert_get_dir()
   raw.files <- gsub(pattern = "\\",x = raw.files,replacement = "/",fixed = T)%>%
     na.omit()
   mzML.files <- gsub(pattern = "\\",x = mzML.files,replacement = "/",fixed = T)%>%
     na.omit()
 
-  ###check msconvert
-  {
-    msconvert_return <- try(system(msconvert,
-                                   intern = T))
-    if(!any(grepl(pattern = "Usage: msconvert", x = msconvert_return))){
-      stop("Command msconvert error, please check environment variables")
-    }
 
-    }
   ###check file and directory
   {
     if(!any(file.exists(raw.files))){
