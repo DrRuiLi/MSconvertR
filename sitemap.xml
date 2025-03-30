@@ -1,27 +1,11 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://wallfcerlr.github.io/MSconvertR/404.html</loc>
-  </url>
-  <url>
-    <loc>https://wallfcerlr.github.io/MSconvertR/authors.html</loc>
-  </url>
-  <url>
-    <loc>https://wallfcerlr.github.io/MSconvertR/index.html</loc>
-  </url>
-  <url>
-    <loc>https://wallfcerlr.github.io/MSconvertR/reference/MSConvert_check.html</loc>
-  </url>
-  <url>
-    <loc>https://wallfcerlr.github.io/MSconvertR/reference/hello.html</loc>
-  </url>
-  <url>
-    <loc>https://wallfcerlr.github.io/MSconvertR/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>https://wallfcerlr.github.io/MSconvertR/reference/msConvert2mzML.html</loc>
-  </url>
-  <url>
-    <loc>https://wallfcerlr.github.io/MSconvertR/reference/msConvertDir.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://wallfcerlr.github.io/MSconvertR/404.html</loc></url>
+<url><loc>https://wallfcerlr.github.io/MSconvertR/LICENSE-text.html</loc></url>
+<url><loc>https://wallfcerlr.github.io/MSconvertR/LICENSE.html</loc></url>
+<url><loc>https://wallfcerlr.github.io/MSconvertR/authors.html</loc></url>
+<url><loc>https://wallfcerlr.github.io/MSconvertR/index.html</loc></url>
+<url><loc>https://wallfcerlr.github.io/MSconvertR/reference/MSConvert.html</loc></url>
+<url><loc>https://wallfcerlr.github.io/MSconvertR/reference/hello.html</loc></url>
+<url><loc>https://wallfcerlr.github.io/MSconvertR/reference/index.html</loc></url>
 </urlset>
+
