@@ -7,12 +7,11 @@ MSConvert_get_dir <- function(){
   return(msconvert.path)
 }
 
-#' Title
-#'
-#' @return
+
+#' MSConvert_check
+#' @describeIn MSConvert check if MSconvert ready
 #' @export
 #'
-#' @examples
 MSConvert_check <- function(){
 
   msconvert <- MSConvert_get_dir()
@@ -25,8 +24,16 @@ MSConvert_check <- function(){
       message("MSConvert not found, re-build?\n 1:yes, 2:no")
       x <- readline()
       if (x==1) {
-        msconvert.zip <- dir(system.file(package = "MSconvertR"),pattern = "msconvert.zip",recursive = T,full.names = T)
-        unzip(msconvert.zip,exdir = dirname(msconvert.zip))
+        #msconvert.zip <- dir(system.file(package = "MSconvertR"),
+        #                     pattern = "msconvert.zip",
+        #                     recursive = T,full.names = T)
+        #unzip(msconvert.zip,exdir = dirname(msconvert.zip))
+        #pwiz.tar <- dir(system.file(package = "MSconvertR"),
+        #                pattern = "pwiz-bin-",
+        #                recursive = T,full.names = T)
+        #untar(pwiz.tar,
+        #      exdir = paste0(dirname(pwiz.tar),"/pwiz"))
+        MSConvert_Deploy()
         return(T)
 
 
@@ -44,17 +51,11 @@ MSConvert_check <- function(){
 }
 
 
-
-#' Title
-#'
-#' @param raw.path
-#' @param format.to
-#'
-#' @return
+#' msConvertDir
+#' @describeIn MSConvert msConvertDir
 #' @export
 #'
-#' @examples
-msConvertDir<- function(raw.path,format.to = "mzML"){
+msConvertDir <- function(raw.path,format.to = "mzML"){
 
   dir.create(paste0(raw.path,"/mzML"),recursive = T)
   raw.files <- data.frame(raw.file = dir(path = raw.path,full.names = T))%>%
@@ -77,17 +78,10 @@ msConvertDir<- function(raw.path,format.to = "mzML"){
 
 }
 
-
-#' Title
-#'
-#' @param raw.files
-#' @param mzML.files
-#' @param BPPARAM
-#'
-#' @return
+#' msConvert2mzML
+#' @describeIn MSConvert msConvert2mzML
 #' @export
 #'
-#' @examples
 msConvert2mzML <- function(raw.files ,
                            mzML.files,
                            BPPARAM = BiocParallel::SnowParam(workers = parallel::detectCores()-1)){
@@ -109,12 +103,13 @@ msConvert2mzML <- function(raw.files ,
     }
     sapply(unique(dirname(mzML.files)),dir.create,recursive =T,showWarnings =F)
 
-  }
+    }
 
   ###msconvert
   {
 
-    shell.commomd <- paste0(msconvert,"  --filter \"peakPicking true 1-\" --mzML ",
+    shell.commomd <- paste0(msconvert," --ignoreUnknownInstrumentError ",
+                            "  --filter \"peakPicking true 1-\" --mzML ",
                             raw.files,
                             " -o ",
                             dirname(mzML.files),
@@ -130,6 +125,76 @@ msConvert2mzML <- function(raw.files ,
 
   }
 
+
+}
+
+
+
+MSConvert_Extract_Thermo_data <- function(raw.files){
+
+
+  ThermoRawMetaDump <- paste0(dirname(MSConvert_get_dir()),
+                              "/ThermoRawMetaDump.exe"  )
+  if(!file.exists(ThermoRawMetaDump)){
+    stop("ThermoRawMetaDump not found")
+  }
+
+  shell.commomd <- paste0(ThermoRawMetaDump,"  ",
+                          raw.files)
+
+  data.return <- BiocParallel::bplapply(shell.commomd,
+                                        FUN = function(x){ system(x,intern = T)},
+                                        BPPARAM = BiocParallel::SerialParam())
+  return(data.return)
+
+}
+
+
+
+
+#' MSConvert_Download
+#' @describeIn MSConvert MSConvert_Download
+#' @export
+#'
+MSConvert_Download <- function(save_path = tempdir()){
+
+
+
+  xml_url <- "https://proteowizard.sourceforge.io/releases/bt83.xml"
+  doc <- xml2::read_xml(xml_url)
+
+  artifacts <- xml2::xml_find_all(doc, ".//artifact")
+  paths <- xml2::xml_text(artifacts)
+
+  target <- paths[grepl("pwiz-bin-windows-x86_64.*\\.tar\\.bz2$", paths)][1]
+
+  build_id <- sub(".*/id:([0-9]+)/.*", "\\1", target)
+  filename <- basename(target)
+
+  s3_base <- "https://mc-tca-01.s3.us-west-2.amazonaws.com/ProteoWizard/bt83"
+  s3_url <- sprintf("%s/%s/%s", s3_base, build_id, filename)
+
+  cat("Download from: ", s3_url, "\n")
+  filename <- paste0(save_path,"/",filename)
+  download.file(s3_url, destfile = filename, method = "wininet")
+  cat("Save to: ", filename, "\n")
+  return(filename)
+
+}
+
+
+#' MSConvert_Deploy
+#' @describeIn MSConvert MSConvert_Deploy
+#' @export
+#'
+MSConvert_Deploy <- function(pwiz.bz = MSConvert_Download()){
+
+
+  pkg.dir <- system.file(package = "MSconvertR")
+  pwiz.dir <- paste0(pkg.dir,"/pwiz")
+
+  untar(pwiz.bz,
+        exdir = pwiz.dir )
 
 }
 
