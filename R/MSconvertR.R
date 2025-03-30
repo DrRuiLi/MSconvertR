@@ -174,10 +174,10 @@ MSConvert_Download <- function(save_path = tempdir()){
   s3_base <- "https://mc-tca-01.s3.us-west-2.amazonaws.com/ProteoWizard/bt83"
   s3_url <- sprintf("%s/%s/%s", s3_base, build_id, filename)
 
-  cat("Download from: ", s3_url, "\n")
+  message("Download from: ", s3_url, "\n")
   filename <- paste0(save_path,"/",filename)
   download.file(s3_url, destfile = filename, method = "wininet")
-  cat("Save to: ", filename, "\n")
+  message("Save to: ", filename, "\n")
   return(filename)
 
 }
@@ -195,6 +195,7 @@ MSConvert_Deploy <- function(pwiz.bz = MSConvert_Download()){
 
   untar(pwiz.bz,
         exdir = pwiz.dir )
+  message("MSConvert Deployed")
 
 }
 
