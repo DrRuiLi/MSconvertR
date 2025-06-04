@@ -1,5 +1,5 @@
 Package: MSconvertR
-Title: What the Package Does (One Line, Title Case)
+Title: API to MSconvert
 Version: 1.0.0
 Authors@R: 
     person("Rui", "Li", , "lirui3@shanghaitech.edu.cn", role = c("aut", "cre"),
