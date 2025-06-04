@@ -129,6 +129,57 @@ msConvert2mzML <- function(raw.files ,
 }
 
 
+#' msConvert2mzXML
+#' @describeIn MSConvert msConvert2mzXML
+#' @export
+#'
+msConvert2mzXML <- function(raw.files ,
+                           mzXML.files,
+                           BPPARAM = BiocParallel::SnowParam(workers = parallel::detectCores()-1)){
+
+  msconvert <- MSConvert_get_dir()
+  raw.files <- gsub(pattern = "\\",x = raw.files,replacement = "/",fixed = T)%>%
+    na.omit()
+  mzXML.files <- gsub(pattern = "\\",x = mzXML.files,replacement = "/",fixed = T)%>%
+    na.omit()
+
+
+  ###check file and directory
+  {
+    if(!any(file.exists(raw.files))){
+      stop(paste0("File not found : ",sum(!file.exists(raw.files)),"/", length(raw.files)))
+    }
+    if(length(raw.files) != length(mzXML.files)){
+      stop("raw files and mzXML files not match")
+    }
+    sapply(unique(dirname(mzXML.files)),dir.create,recursive =T,showWarnings =F)
+
+    }
+
+  ###msconvert
+  {
+
+    shell.commomd <- paste0(msconvert," --ignoreUnknownInstrumentError ",
+                            "  --filter \"peakPicking true 1-\" --mzXML ",
+                            raw.files,
+                            " -o ",
+                            dirname(mzXML.files),
+                            " --outfile ",
+                            mzXML.files)
+    #system(shell.commomd,intern = T)
+
+
+    BiocParallel::bplapply(shell.commomd,
+                           FUN = function(x){ system(x,intern = T)},
+                           BPPARAM = BPPARAM)
+    return(0)
+
+  }
+
+
+}
+
+
 
 MSConvert_Extract_Thermo_data <- function(raw.files){
 
