@@ -3,5 +3,7 @@
 export(MSConvert_Deploy)
 export(MSConvert_Download)
 export(MSConvert_check)
+export(msConvert)
 export(msConvert2mzML)
+export(msConvert2mzXML)
 export(msConvertDir)
