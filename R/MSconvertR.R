@@ -74,7 +74,7 @@ msConvert <- function(raw.files,
 #'
 msConvertDir <- function(raw.path,format.to = "mzXML"){
 
-  dir.create(paste0(raw.path,"/",format.to),recursive = T)
+  dir.create(paste0(raw.path,"/msData"),recursive = T)
   raw.files <- data.frame(raw.file = dir(path = raw.path,full.names = T))%>%
     dplyr::mutate(format = case_when(grepl(pattern = ".raw$",x = raw.file)~".raw",
                                      grepl(pattern = ".wiff$",x = raw.file)~".wiff",
