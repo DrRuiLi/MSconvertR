@@ -218,4 +218,60 @@ MSConvert_Extract_Thermo_data <- function(raw.files){
 }
 
 
+#' @describeIn msConvert Convert raw data from mass spectrometry
+#' @title msConvert
+#' @param raw.files data input
+#' @param dir.to dirname(raw.files)
+#' @param format.to "mzML
+#' @param BPPARAM BPPARAM
+#'
+#' @export
+#'
+msConvert2SciexMultipleWiff <- function(raw.files,
+                                        dir.to = dirname(raw.files),
+                                        format.to = "mzML",
+                                        BPPARAM = BiocParallel::SnowParam(workers = parallel::detectCores()-1)){
+
+
+  ### pre
+  {
+
+    if (length(raw.files)==1)
+      BPPARAM = BiocParallel::SerialParam()
+    msconvert <- MSConvert_get_dir()
+    raw.files <- gsub(pattern = "\\",x = raw.files,replacement = "/",fixed = T)%>%
+      na.omit()
+
+
+  }
+
+  ###check file and directory
+  {
+    if(!any(file.exists(raw.files))){
+      stop(paste0("File not found : ",sum(!file.exists(raw.files)),"/", length(raw.files)))
+    }
+
+
+  }
+
+  ###msconvert
+  {
+
+    shell.commomd <- paste0(msconvert," --ignoreUnknownInstrumentError ",
+                            "  --filter \"peakPicking true 1-\" --",format.to," ",
+                            raw.files,
+                            " -o ",
+                            dir.to)
+    #system(shell.commomd,intern = T)
+
+
+    BiocParallel::bplapply(shell.commomd,
+                           FUN = function(x){ system(x,intern = T)},
+                           BPPARAM = BPPARAM)
+    return(0)
+
+  }
+
+
+}
 
