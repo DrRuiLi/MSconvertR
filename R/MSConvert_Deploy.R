@@ -76,7 +76,11 @@ MSConvert_Download <- function(save_path = tempdir()){
 
   message("Download from: ", s3_url, "\n")
   filename <- paste0(save_path,"/",filename)
-  download.file(s3_url, destfile = filename, method = "wininet")
+  if (!file.exists(filename)) {
+    download.file(s3_url, destfile = filename#, method = "wininet"
+    )
+  }
+
   message("Save to: ", filename, "\n")
   return(filename)
 
