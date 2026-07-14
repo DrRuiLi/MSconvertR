@@ -3,6 +3,8 @@
 export(MSConvert_Deploy)
 export(MSConvert_Download)
 export(MSConvert_check)
+export(get_ThermoRawMetaDump)
+export(get_ThermoRaw_LC_gradient)
 export(msConvert)
 export(msConvert2SciexMultipleWiff)
 export(msConvert2mzML)
