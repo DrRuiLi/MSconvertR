@@ -43,7 +43,8 @@ MSConvert_check <- function(){
 
   }
   message("MSConvert in: ",msconvert)
-  return(T)
+  message(grep("release",msconvert_return,value = T))
+  return(invisible(T))
 
 
 
