@@ -175,9 +175,12 @@ get_ThermoRaw_LC_gradient <- function(raw.files){
 
   ### pre
   {
-    ThermoRawMetaDump <- get_ThermoRawMetaDump()
-    if (is.na(ThermoRawMetaDump) || !file.exists(ThermoRawMetaDump))
-      stop("ThermoRawMetaDump.exe not found under package pwiz")
+    MSConvert_require_ready()
+    if (!MSConvert_is_linux()) {
+      ThermoRawMetaDump <- get_ThermoRawMetaDump()
+      if (is.na(ThermoRawMetaDump) || !file.exists(ThermoRawMetaDump))
+        stop("ThermoRawMetaDump.exe not found under package pwiz")
+    }
     raw.files <- gsub(pattern = "\\", x = raw.files, replacement = "/", fixed = TRUE) %>%
       na.omit() %>%
       as.character()
@@ -198,7 +201,20 @@ get_ThermoRaw_LC_gradient <- function(raw.files){
   ### run ThermoRawMetaDump and parse LC gradient
   {
     out <- lapply(raw.files, function(raw.file) {
-      shell.command <- paste0('"', ThermoRawMetaDump, '" "', raw.file, '"')
+      raw.file <- normalizePath(raw.file, winslash = "/", mustWork = TRUE)
+      if (MSConvert_is_linux()) {
+        shell.command <- MSConvert_build_cmd(
+          tool = "ThermoRawMetaDump.exe",
+          args = shQuote(paste0("/data/in/", basename(raw.file))),
+          in_dir = dirname(raw.file)
+        )
+      } else {
+        shell.command <- MSConvert_build_cmd(
+          tool = "ThermoRawMetaDump.exe",
+          args = shQuote(raw.file),
+          in_dir = dirname(raw.file)
+        )
+      }
       dump.lines <- suppressWarnings(
         try(system(shell.command, intern = TRUE), silent = TRUE)
       )
