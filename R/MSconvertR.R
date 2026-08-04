@@ -13,7 +13,7 @@ msConvert <- function(raw.files,
 
     if (length(raw.files)==1)
       BPPARAM = BiocParallel::SerialParam()
-    msconvert <- MSConvert_get_dir()
+    MSConvert_require_ready()
     raw.files <- gsub(pattern = "\\",x = raw.files,replacement = "/",fixed = T)%>%
       na.omit()
     ms.data.names <- gsub(pattern = "\\",x = ms.data.names,replacement = "/",fixed = T)%>%
@@ -43,15 +43,19 @@ msConvert <- function(raw.files,
   ###msconvert
   {
 
-    shell.commomd <- paste0(msconvert," --ignoreUnknownInstrumentError ",
-                            "  --filter \"peakPicking true 1-\" --",format.to," ",
-                            raw.files,
-                            " -o ",
-                            dirname(ms.data.files),
-                            " --outfile ",
-                            ms.data.files)
-    #system(shell.commomd,intern = T)
-
+    shell.commomd <- mapply(
+      function(raw.file, ms.data.file) {
+        MSConvert_build_msconvert_cmd(
+          raw.file = raw.file,
+          out.dir = dirname(ms.data.file),
+          outfile = ms.data.file,
+          format.to = format.to
+        )
+      },
+      raw.files,
+      ms.data.files,
+      USE.NAMES = FALSE
+    )
 
     BiocParallel::bplapply(shell.commomd,
                            FUN = function(x){ system(x,intern = T)},
@@ -103,7 +107,7 @@ msConvert2mzML <- function(raw.files ,
                            mzML.files,
                            BPPARAM = BiocParallel::SnowParam(workers = parallel::detectCores()-1)){
 
-  msconvert <- MSConvert_get_dir()
+  MSConvert_require_ready()
   raw.files <- gsub(pattern = "\\",x = raw.files,replacement = "/",fixed = T)%>%
     na.omit()
   mzML.files <- gsub(pattern = "\\",x = mzML.files,replacement = "/",fixed = T)%>%
@@ -125,15 +129,19 @@ msConvert2mzML <- function(raw.files ,
   ###msconvert
   {
 
-    shell.commomd <- paste0(msconvert," --ignoreUnknownInstrumentError ",
-                            "  --filter \"peakPicking true 1-\" --mzML ",
-                            raw.files,
-                            " -o ",
-                            dirname(mzML.files),
-                            " --outfile ",
-                            mzML.files)
-    #system(shell.commomd,intern = T)
-
+    shell.commomd <- mapply(
+      function(raw.file, mzML.file) {
+        MSConvert_build_msconvert_cmd(
+          raw.file = raw.file,
+          out.dir = dirname(mzML.file),
+          outfile = mzML.file,
+          format.to = "mzML"
+        )
+      },
+      raw.files,
+      mzML.files,
+      USE.NAMES = FALSE
+    )
 
     BiocParallel::bplapply(shell.commomd,
                            FUN = function(x){ system(x,intern = T)},
@@ -154,7 +162,7 @@ msConvert2mzXML <- function(raw.files ,
                            mzXML.files,
                            BPPARAM = BiocParallel::SnowParam(workers = parallel::detectCores()-1)){
 
-  msconvert <- MSConvert_get_dir()
+  MSConvert_require_ready()
   raw.files <- gsub(pattern = "\\",x = raw.files,replacement = "/",fixed = T)%>%
     na.omit()
   mzXML.files <- gsub(pattern = "\\",x = mzXML.files,replacement = "/",fixed = T)%>%
@@ -176,15 +184,19 @@ msConvert2mzXML <- function(raw.files ,
   ###msconvert
   {
 
-    shell.commomd <- paste0(msconvert," --ignoreUnknownInstrumentError ",
-                            "  --filter \"peakPicking true 1-\" --mzXML ",
-                            raw.files,
-                            " -o ",
-                            dirname(mzXML.files),
-                            " --outfile ",
-                            mzXML.files)
-    #system(shell.commomd,intern = T)
-
+    shell.commomd <- mapply(
+      function(raw.file, mzXML.file) {
+        MSConvert_build_msconvert_cmd(
+          raw.file = raw.file,
+          out.dir = dirname(mzXML.file),
+          outfile = mzXML.file,
+          format.to = "mzXML"
+        )
+      },
+      raw.files,
+      mzXML.files,
+      USE.NAMES = FALSE
+    )
 
     BiocParallel::bplapply(shell.commomd,
                            FUN = function(x){ system(x,intern = T)},
@@ -200,15 +212,27 @@ msConvert2mzXML <- function(raw.files ,
 
 MSConvert_Extract_Thermo_data <- function(raw.files){
 
+  MSConvert_require_ready()
+  raw.files <- gsub(pattern = "\\", x = raw.files, replacement = "/", fixed = TRUE) %>%
+    na.omit() %>%
+    as.character()
 
-  ThermoRawMetaDump <- paste0(dirname(MSConvert_get_dir()),
-                              "/ThermoRawMetaDump.exe"  )
-  if(!file.exists(ThermoRawMetaDump)){
-    stop("ThermoRawMetaDump not found")
-  }
-
-  shell.commomd <- paste0(ThermoRawMetaDump,"  ",
-                          raw.files)
+  shell.commomd <- vapply(raw.files, function(raw.file) {
+    raw.file <- normalizePath(raw.file, winslash = "/", mustWork = TRUE)
+    if (MSConvert_is_linux()) {
+      MSConvert_build_cmd(
+        tool = "ThermoRawMetaDump.exe",
+        args = shQuote(paste0("/data/in/", basename(raw.file))),
+        in_dir = dirname(raw.file)
+      )
+    } else {
+      MSConvert_build_cmd(
+        tool = "ThermoRawMetaDump.exe",
+        args = shQuote(raw.file),
+        in_dir = dirname(raw.file)
+      )
+    }
+  }, character(1), USE.NAMES = FALSE)
 
   data.return <- BiocParallel::bplapply(shell.commomd,
                                         FUN = function(x){ system(x,intern = T)},
@@ -238,10 +262,11 @@ msConvert2SciexMultipleWiff <- function(raw.files,
 
     if (length(raw.files)==1)
       BPPARAM = BiocParallel::SerialParam()
-    msconvert <- MSConvert_get_dir()
+    MSConvert_require_ready()
     raw.files <- gsub(pattern = "\\",x = raw.files,replacement = "/",fixed = T)%>%
       na.omit()
-
+    if (length(dir.to) == 1L && length(raw.files) > 1L)
+      dir.to <- rep(dir.to, length(raw.files))
 
   }
 
@@ -257,13 +282,19 @@ msConvert2SciexMultipleWiff <- function(raw.files,
   ###msconvert
   {
 
-    shell.commomd <- paste0(msconvert," --ignoreUnknownInstrumentError ",
-                            "  --filter \"peakPicking true 1-\" --",format.to," ",
-                            raw.files,
-                            " -o ",
-                            dir.to)
-    #system(shell.commomd,intern = T)
-
+    shell.commomd <- mapply(
+      function(raw.file, out.dir) {
+        MSConvert_build_msconvert_cmd(
+          raw.file = raw.file,
+          out.dir = out.dir,
+          outfile = NULL,
+          format.to = format.to
+        )
+      },
+      raw.files,
+      dir.to,
+      USE.NAMES = FALSE
+    )
 
     BiocParallel::bplapply(shell.commomd,
                            FUN = function(x){ system(x,intern = T)},
@@ -274,4 +305,3 @@ msConvert2SciexMultipleWiff <- function(raw.files,
 
 
 }
-
