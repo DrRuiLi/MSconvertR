@@ -42,26 +42,14 @@ msConvert <- function(raw.files,
 
   ###msconvert
   {
-
-    shell.commomd <- mapply(
-      function(raw.file, ms.data.file) {
-        MSConvert_build_msconvert_cmd(
-          raw.file = raw.file,
-          out.dir = dirname(ms.data.file),
-          outfile = ms.data.file,
-          format.to = format.to
-        )
-      },
-      raw.files,
-      ms.data.files,
-      USE.NAMES = FALSE
+    MSConvert_convert_batch(
+      raw.files = raw.files,
+      out.dirs = dirname(ms.data.files),
+      outfiles = ms.data.files,
+      format.to = format.to,
+      BPPARAM = BPPARAM
     )
-
-    BiocParallel::bplapply(shell.commomd,
-                           FUN = function(x){ system(x,intern = T)},
-                           BPPARAM = BPPARAM)
     return(0)
-
   }
 
 
@@ -128,26 +116,14 @@ msConvert2mzML <- function(raw.files ,
 
   ###msconvert
   {
-
-    shell.commomd <- mapply(
-      function(raw.file, mzML.file) {
-        MSConvert_build_msconvert_cmd(
-          raw.file = raw.file,
-          out.dir = dirname(mzML.file),
-          outfile = mzML.file,
-          format.to = "mzML"
-        )
-      },
-      raw.files,
-      mzML.files,
-      USE.NAMES = FALSE
+    MSConvert_convert_batch(
+      raw.files = raw.files,
+      out.dirs = dirname(mzML.files),
+      outfiles = mzML.files,
+      format.to = "mzML",
+      BPPARAM = BPPARAM
     )
-
-    BiocParallel::bplapply(shell.commomd,
-                           FUN = function(x){ system(x,intern = T)},
-                           BPPARAM = BPPARAM)
     return(0)
-
   }
 
 
@@ -183,26 +159,14 @@ msConvert2mzXML <- function(raw.files ,
 
   ###msconvert
   {
-
-    shell.commomd <- mapply(
-      function(raw.file, mzXML.file) {
-        MSConvert_build_msconvert_cmd(
-          raw.file = raw.file,
-          out.dir = dirname(mzXML.file),
-          outfile = mzXML.file,
-          format.to = "mzXML"
-        )
-      },
-      raw.files,
-      mzXML.files,
-      USE.NAMES = FALSE
+    MSConvert_convert_batch(
+      raw.files = raw.files,
+      out.dirs = dirname(mzXML.files),
+      outfiles = mzXML.files,
+      format.to = "mzXML",
+      BPPARAM = BPPARAM
     )
-
-    BiocParallel::bplapply(shell.commomd,
-                           FUN = function(x){ system(x,intern = T)},
-                           BPPARAM = BPPARAM)
     return(0)
-
   }
 
 
@@ -281,26 +245,14 @@ msConvert2SciexMultipleWiff <- function(raw.files,
 
   ###msconvert
   {
-
-    shell.commomd <- mapply(
-      function(raw.file, out.dir) {
-        MSConvert_build_msconvert_cmd(
-          raw.file = raw.file,
-          out.dir = out.dir,
-          outfile = NULL,
-          format.to = format.to
-        )
-      },
-      raw.files,
-      dir.to,
-      USE.NAMES = FALSE
+    MSConvert_convert_batch(
+      raw.files = raw.files,
+      out.dirs = dir.to,
+      outfiles = NULL,
+      format.to = format.to,
+      BPPARAM = BPPARAM
     )
-
-    BiocParallel::bplapply(shell.commomd,
-                           FUN = function(x){ system(x,intern = T)},
-                           BPPARAM = BPPARAM)
     return(0)
-
   }
 
 

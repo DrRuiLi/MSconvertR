@@ -167,6 +167,118 @@ MSConvert_build_msconvert_cmd <- function(raw.file,
 }
 
 
+#' Copy Docker msconvert output from a local stage into the project directory.
+#' The stage is removed afterwards. \code{file.rename} is not used because
+#' \code{/tmp} and an NFS project directory are different devices.
+#' @noRd
+MSConvert_collect_stage <- function(stage, out.dir, outfile = NULL) {
+  staged <- list.files(stage, full.names = TRUE, recursive = TRUE, no.. = TRUE)
+  staged <- staged[!dir.exists(staged)]
+  if (!length(staged)) {
+    warning("msconvert wrote no file for ", out.dir, call. = FALSE)
+    return(invisible(FALSE))
+  }
+
+  dir.create(out.dir, recursive = TRUE, showWarnings = FALSE)
+  if (is.null(outfile)) {
+    ok <- file.copy(
+      staged,
+      file.path(out.dir, basename(staged)),
+      overwrite = TRUE
+    )
+  } else {
+    wanted <- basename(outfile)
+    src <- staged[basename(staged) == wanted]
+    if (!length(src) && length(staged) == 1L) {
+      src <- staged
+    }
+    if (!length(src)) {
+      warning(
+        "msconvert output ", wanted, " not found. Found: ",
+        paste(basename(staged), collapse = ", "),
+        call. = FALSE
+      )
+      return(invisible(FALSE))
+    }
+    ok <- file.copy(src[[1L]], file.path(out.dir, wanted), overwrite = TRUE)
+  }
+  if (!all(ok)) {
+    warning("Failed to copy msconvert output into ", out.dir, call. = FALSE)
+  }
+  invisible(all(ok))
+}
+
+
+#' Run msconvert for a batch of files.
+#' On Linux, Docker writes into a local temp directory. Container root is
+#' squashed to \code{nobody} on NFS, so it cannot create files in a mode-775
+#' project directory. This process then copies the result into \code{out.dirs}.
+#' @noRd
+MSConvert_convert_batch <- function(raw.files,
+                                    out.dirs,
+                                    outfiles = NULL,
+                                    format.to = "mzML",
+                                    BPPARAM = BiocParallel::SerialParam()) {
+  n <- length(raw.files)
+  if (length(out.dirs) == 1L && n > 1L) {
+    out.dirs <- rep(out.dirs, n)
+  }
+  if (is.null(outfiles)) {
+    outfiles <- rep(list(NULL), n)
+  } else {
+    outfiles <- as.list(outfiles)
+  }
+
+  if (!MSConvert_is_linux()) {
+    cmds <- mapply(
+      MSConvert_build_msconvert_cmd,
+      raw.file = raw.files,
+      out.dir = out.dirs,
+      outfile = outfiles,
+      MoreArgs = list(format.to = format.to),
+      USE.NAMES = FALSE
+    )
+    BiocParallel::bplapply(
+      cmds,
+      function(x) system(x, intern = TRUE),
+      BPPARAM = BPPARAM
+    )
+    return(invisible(0))
+  }
+
+  stages <- vapply(seq_len(n), function(i) {
+    stage <- tempfile("msconvert-")
+    dir.create(stage, recursive = TRUE, showWarnings = FALSE)
+    normalizePath(stage, winslash = "/", mustWork = TRUE)
+  }, character(1))
+  on.exit(unlink(stages, recursive = TRUE, force = TRUE), add = TRUE)
+
+  cmds <- mapply(
+    function(raw.file, stage, outfile) {
+      MSConvert_build_msconvert_cmd(
+        raw.file = raw.file,
+        out.dir = stage,
+        outfile = outfile,
+        format.to = format.to
+      )
+    },
+    raw.files,
+    stages,
+    outfiles,
+    USE.NAMES = FALSE
+  )
+  BiocParallel::bplapply(
+    cmds,
+    function(x) system(x, intern = TRUE),
+    BPPARAM = BPPARAM
+  )
+  for (i in seq_len(n)) {
+    MSConvert_collect_stage(stages[[i]], out.dirs[[i]], outfiles[[i]])
+  }
+  invisible(0)
+}
+
+
 #' MSConvert_check
 #' @describeIn MSConvert check if MSconvert ready
 #' @export
